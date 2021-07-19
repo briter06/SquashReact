@@ -1,37 +1,45 @@
+import "reflect-metadata";
 import React from 'react';
-import { StyleSheet, View, TextInput, Text, TouchableOpacity, Alert  } from 'react-native';
-import { ServiceContext } from '../../Service';
+import { StyleSheet, View, TextInput, Text, TouchableOpacity, Alert, ImageBackground,Image, ActivityIndicator  } from 'react-native';
 import { globalStyles } from './styles';
-import { Actions } from 'react-native-router-flux'
+import { resolve } from 'inversify-react';
+import {AuthService} from '../services/Auth/AuthService';
+import { StackActions } from '@react-navigation/native';
 
+interface Props {
+    navigation: any
+}
 
-export class LoginForm extends React.Component{
-    static contextType = ServiceContext;
-    state = {
-        username:'',
-        password:''
-    }
+export class LoginForm extends React.Component<Props>{
+
+    @resolve(AuthService)
+    private authService!:AuthService;
+    private back_img :any = require('../../assets/images/back.png');
+    private icon_img :any = require('../../assets/images/ic_launcher_foreground.png');
+
     constructor(props:any){
         super(props);
     }
 
+    state = {
+        username:'',
+        password:'',
+        proccessing:false
+    }
+
     login = ()=>{
-        this.context.authService.login(this.state.username,this.state.password)
+        this.setState({proccessing:true});
+        this.authService.login(this.state.username,this.state.password)
         .then(async (result:any)=>{
             if(result.data.status==1){
-                await this.context.authService.saveAccessToken(result.data.payload.accessToken);
+                await this.authService.saveAccessToken(result.data.payload.accessToken);
                 this.gotToMain();
             }else{
                 Alert.alert(
                     "Error",
                     "Usuario o contraseña incorrectos",
                     [
-                      {
-                        text: "Cancelar",
-                        onPress: () => console.log("Cancel Pressed"),
-                        style: "cancel"
-                      },
-                      { text: "OK", onPress: () => console.log("OK Pressed") }
+                      { text: "OK", onPress: () => this.setState({proccessing:false})}
                     ]
                   );
             }
@@ -39,37 +47,57 @@ export class LoginForm extends React.Component{
     }
 
     gotToMain = ()=>{
-        Actions.main();
+        this.props.navigation.dispatch(
+            StackActions.replace('drawer_main')
+        );
+    }
+
+    disableLogin = ()=>{
+        return this.state.proccessing || (this.state.username.trim()=='' || this.state.password.trim()=='');
     }
 
     render = ()=>{
         return (
-            <View>
-                <View style={[globalStyles.containerFluid,styles.container]}>
-                    
-                    <Text style={styles.label}>Usuario</Text>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={(newValue)=>{this.setState({username:newValue})}}
-                        value={this.state.username}
-                        placeholder="Usuario"
-                        
-                    />
-                    <Text style={[styles.label,{marginTop:10}]}>Contraseña</Text>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={(newValue)=>{this.setState({password:newValue})}}
-                        value={this.state.password}
-                        placeholder="Contraseña"
-                        secureTextEntry={true}
-                    />
+            <View style={{
+                flex:1,
+            }}>
+                <ImageBackground source={this.back_img} resizeMode="cover" style={styles.imageBackground}>
+                    <View style={[globalStyles.containerFluid,styles.container]}>
+                        <Image
+                            style={styles.tinyLogo}
+                            source={this.icon_img}
+                        />
 
-                    <TouchableOpacity disabled={this.state.username.trim()=='' || this.state.password.trim()==''}
-                    style={styles.button} onPress={this.login}>
-                        <Text style={styles.text}>Entrar</Text>
-                    </TouchableOpacity>
-                    
-                </View>
+                        <View style={styles.loginForm}>
+                            
+                            <Text style={styles.label}>Usuario</Text>
+                            <TextInput
+                                style={styles.input}
+                                onChangeText={(newValue)=>{this.setState({username:newValue})}}
+                                value={this.state.username}
+                                placeholder="Usuario"
+                                
+                            />
+                            <Text style={[styles.label,{marginTop:10}]}>Contraseña</Text>
+                            <TextInput
+                                style={styles.input}
+                                onChangeText={(newValue)=>{this.setState({password:newValue})}}
+                                value={this.state.password}
+                                placeholder="Contraseña"
+                                secureTextEntry={true}
+                            />
+
+                            <TouchableOpacity disabled={this.disableLogin()}
+                            style={[this.disableLogin()?globalStyles.button_disabled:globalStyles.button]} onPress={this.login}>
+                                {
+                                    this.state.proccessing?
+                                    <ActivityIndicator size="large" color="#FFFFFF" />:
+                                    <Text style={globalStyles.buttonText}>Entrar</Text>
+                                }
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </ImageBackground>
             </View>
         );
     }
@@ -78,29 +106,37 @@ export class LoginForm extends React.Component{
 const styles = StyleSheet.create({
     label:{
         fontWeight:'bold',
-        fontSize:15
+        fontSize:15,
+        marginBottom:10
     },
     input: {
         borderWidth: 1,
         width:'80%',
-        textAlign:'center'
+        textAlign:'center',
+        borderRadius:10
     },
     container:{
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        flex:1
     },
-    button: {
-        marginTop:15,
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        borderRadius: 4,
-        backgroundColor: 'black',
+    imageBackground: {
+        flex: 1,
+        justifyContent: "center",
+        backgroundColor:'#D8D00B'
       },
-      text: {
-        fontSize: 16,
-        lineHeight: 21,
-        fontWeight: 'bold',
-        letterSpacing: 0.25,
-        color: 'white',
-      },
+    loginForm:{
+        alignItems: 'center',
+        justifyContent: 'center',
+        width:'80%',
+        paddingVertical:50,
+        borderRadius:25,
+        opacity:0.8,
+        backgroundColor:'white'
+    },
+    tinyLogo: {
+        width: 250,
+        height: 250,
+        marginBottom:5
+      }
   });
