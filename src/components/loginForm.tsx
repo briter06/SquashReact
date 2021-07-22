@@ -24,11 +24,11 @@ export class LoginForm extends React.Component<Props>{
     state = {
         username:'',
         password:'',
-        proccessing:false
+        processing:false
     }
 
     login = ()=>{
-        this.setState({proccessing:true});
+        this.setState({processing:true});
         this.authService.login(this.state.username,this.state.password)
         .then(async (result:any)=>{
             if(result.data.status==1){
@@ -39,7 +39,7 @@ export class LoginForm extends React.Component<Props>{
                     "Error",
                     "Usuario o contraseña incorrectos",
                     [
-                      { text: "OK", onPress: () => this.setState({proccessing:false})}
+                      { text: "OK", onPress: () => this.setState({processing:false})}
                     ]
                   );
             }
@@ -52,8 +52,8 @@ export class LoginForm extends React.Component<Props>{
         );
     }
 
-    disableLogin = ()=>{
-        return this.state.proccessing || (this.state.username.trim()=='' || this.state.password.trim()=='');
+    valid = ()=>{
+        return !this.state.processing && this.state.username.trim()!=='' && this.state.password.trim()!=='';
     }
 
     render = ()=>{
@@ -87,10 +87,10 @@ export class LoginForm extends React.Component<Props>{
                                 secureTextEntry={true}
                             />
 
-                            <TouchableOpacity disabled={this.disableLogin()}
-                            style={[this.disableLogin()?globalStyles.button_disabled:globalStyles.button]} onPress={this.login}>
+                            <TouchableOpacity disabled={!this.valid()}
+                            style={[this.valid()?globalStyles.button:globalStyles.button_disabled]} onPress={this.login}>
                                 {
-                                    this.state.proccessing?
+                                    this.state.processing?
                                     <ActivityIndicator size="large" color="#FFFFFF" />:
                                     <Text style={globalStyles.buttonText}>Entrar</Text>
                                 }

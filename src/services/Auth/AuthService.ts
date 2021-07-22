@@ -9,10 +9,11 @@ import { StackActions } from '@react-navigation/native';
 @injectable()
 export class AuthService {
 
-    private activeUser?:any;
+    private activeUser:any;
     private access_token:string;
 
     constructor(){
+        this.activeUser = {nombre:'',tipo:''}
         this.access_token = '';
         axios.interceptors.request.use((config) => {
             if(this.isLoggedIn()){
@@ -52,6 +53,14 @@ export class AuthService {
         return axios.get(environment.API_URL+'auth/me').then((result:any)=>{
             this.activeUser = result.data;
         });
+    }
+
+    updateUser(userInfo:any){
+        return axios.put(environment.API_URL+'auth/me',userInfo);
+    }
+
+    updatePassword(password:string,currPassword:string){
+        return axios.put(environment.API_URL+'auth/me/password',{password,currPassword});
     }
 
     getActiveUser(){
