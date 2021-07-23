@@ -5,6 +5,7 @@ import { createMaterialBottomTabNavigator } from '@react-navigation/material-bot
 import { FontAwesome5 } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons'; 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { PartidosScreen } from './partidos';
 
 const Tab = createMaterialBottomTabNavigator();
 
@@ -15,16 +16,16 @@ interface Props {
 
 export default class TorneoSeccionesNavigator extends React.Component<Props>{
 
-
-
-
     render(){
         return (
             <Tab.Navigator initialRouteName={"octavos"}>
 
                 <Tab.Screen
                     name="octavos"
-                    children={()=><Text>Octavos</Text>}
+                    children={({navigation})=>
+                        <PartidosScreen title={'Octavos'} navigation={navigation}
+                        id_torneo={this.props.id_torneo} seccion={8}/>
+                    }
                     options={{
                     tabBarLabel: 'Octavos',
                     tabBarIcon: ({ color }) => (
@@ -35,7 +36,10 @@ export default class TorneoSeccionesNavigator extends React.Component<Props>{
 
                 <Tab.Screen
                     name="cuartos"
-                    children={()=><Text>Cuartos</Text>}
+                    children={({navigation})=>
+                        <PartidosScreen title={'Cuartos'} navigation={navigation}
+                        id_torneo={this.props.id_torneo} seccion={4}/>
+                    }
                     options={{
                     tabBarLabel: 'Cuartos',
                     tabBarIcon: ({ color }) => (
@@ -46,7 +50,10 @@ export default class TorneoSeccionesNavigator extends React.Component<Props>{
 
                 <Tab.Screen
                     name="semi"
-                    children={()=><Text>Semi</Text>}
+                    children={({navigation})=>
+                        <PartidosScreen title={'Semifinales'} navigation={navigation}
+                        id_torneo={this.props.id_torneo} seccion={2}/>
+                    }
                     options={{
                     tabBarLabel: 'Semi',
                     tabBarIcon: ({ color }) => (
@@ -57,7 +64,10 @@ export default class TorneoSeccionesNavigator extends React.Component<Props>{
 
                 <Tab.Screen
                     name="final"
-                    children={()=><Text>Final</Text>}
+                    children={({navigation})=>
+                        <PartidosScreen title={'Final'} navigation={navigation}
+                        id_torneo={this.props.id_torneo} seccion={1}/>
+                    }
                     options={{
                     tabBarLabel: 'Final',
                     tabBarIcon: ({ color }) => (

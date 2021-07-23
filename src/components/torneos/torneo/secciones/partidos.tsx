@@ -3,39 +3,52 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator } from 'react-native';
 import { ScrollView } from "react-native-gesture-handler";
 import { Divider } from "react-native-elements";
-import { TorneoService } from "../../../services/Torneo/TorneoService";
+import { TorneoService } from "../../../../services/Torneo/TorneoService";
 import { resolve } from "inversify-react";
 import { Table, Row, Rows } from 'react-native-table-component';
 
 interface Props {
-    navigation: any,
-    id_torneo:any
+    navigation: any;
+    id_torneo:any;
+    seccion:number;
+    title:string;
 }
 
-interface JugadoresState{
-    jugadores:Array<{id:number,nombre:string,puntaje:number}>;
+interface Partido{
+    id:number,
+    seccion:number,
+    jugador1:number,
+    jugador2:number,
+    ganador:number,
+    createdAt:Date,
+    updatedAt:Date,
+    TorneoId:number,
+    nombre_jugador1:string,
+    nombre_jugador2:string
+}
+
+interface PartidosState{
+    partidos:Array<Partido>;
     refreshing:boolean,
     processing:boolean,
-    flexRows:number[],
-    tableHead:any
 }
 
 
-export class JugadoresScreen extends React.Component<Props,JugadoresState>{
+export class PartidosScreen extends React.Component<Props,PartidosState>{
 
     @resolve(TorneoService)
     private torneoService!:TorneoService;
 
     private _unsubscribe :any;
 
+    private cupImg:any = require('../../../../../assets/images/cup.png');
+
     constructor(props:any){
         super(props);
         this.state = {
-            jugadores:[],
+            partidos:[],
             refreshing:false,
-            processing:false,
-            flexRows:[1,2,1],
-            tableHead: ['Ranking', 'Nombre', 'Puntaje']
+            processing:false
         }
         
     }
@@ -43,16 +56,16 @@ export class JugadoresScreen extends React.Component<Props,JugadoresState>{
     componentDidMount = () => {
         this._unsubscribe  = this.props.navigation.addListener('focus',
         () => {
-            this.initJugadores();
+            this.initPartidos();
         })
     }
 
-    initJugadores(){
+    initPartidos(){
         this.setState({processing:true});
-        return this.torneoService.getJugadores(this.props.id_torneo)
+        return this.torneoService.getPartidos(this.props.id_torneo,this.props.seccion)
         .then(({data})=>{
             this.setState({processing:false});
-            this.setState({jugadores:data});
+            this.setState({partidos:data});
         });
     }
 
@@ -62,7 +75,14 @@ export class JugadoresScreen extends React.Component<Props,JugadoresState>{
 
     onRefresh=()=>{
         this.setState({refreshing:true});
-        this.initJugadores().finally(()=>this.setState({refreshing:false}));
+        this.initPartidos().finally(()=>this.setState({refreshing:false}));
+    }
+
+    esGanador=(partido:Partido,jugador:number)=>{
+        if(partido.ganador!=0 && jugador===partido.ganador){
+            return {color:'green'};
+        }
+        return {};
     }
 
     render(){
@@ -76,7 +96,7 @@ export class JugadoresScreen extends React.Component<Props,JugadoresState>{
                     />
                 }>
 
-                    <Text style={{fontWeight:'bold',fontSize:40}}>Jugadores</Text>
+                    <Text style={{fontWeight:'bold',fontSize:40}}>{this.props.title}</Text>
 
                     {
                         this.state.processing ?
@@ -86,15 +106,28 @@ export class JugadoresScreen extends React.Component<Props,JugadoresState>{
                         //         <Text>{j.nombre}</Text>
                         //     </View>
                         // )
-                        <View style={styles.table}>
-                            <Table borderStyle={{borderWidth: 2, borderColor: '#c8e1ff'}}>
-                            <Row flexArr={this.state.flexRows} data={this.state.tableHead} style={styles.table_head} textStyle={styles.table_text}/>
+                        <View style={styles.partidos_container}>
                             {
-                                this.state.jugadores.map((t,i)=>
-                                    <Row key={i} data={[i+1,t.nombre,t.puntaje]} flexArr={this.state.flexRows} textStyle={styles.table_text}/>
+                                this.state.partidos.map((t,i)=>
+                                    // <Text key={i}>{t.id}</Text>
+                                    <View key={i} style={[styles.button_container,styles.circular_border,t.ganador!=0?{borderColor:'green'}:{}]}>
+                                        <TouchableOpacity style={[styles.full_size,styles.circular_border]}
+                                        onPress={() => {}}>
+                                            <Text style={[styles.text_button, this.esGanador(t,t.jugador1)]}>{t.nombre_jugador1}</Text>
+                                            <Text style={[styles.text_button]}>VS</Text>
+                                            <Text style={[styles.text_button, this.esGanador(t,t.jugador2)]}>{t.nombre_jugador2}</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 )
                             }
-                            </Table>
+                            {
+                                this.props.seccion==1 && this.state.partidos.length!==0? 
+                                    <Image
+                                        style={styles.image}
+                                        source={this.cupImg}
+                                    />
+                                : <View/>
+                            }
                         </View>
                     }
                 </ScrollView>
@@ -131,9 +164,10 @@ const styles = StyleSheet.create({
         fontWeight:'bold',
         fontSize:20,
     },
-    table:{
-        width:'90%',
-        marginTop:25,
+    partidos_container:{
+        width:'100%',
+        alignItems:'center',
+        // marginTop:5,
         marginBottom:20
     },
     table_head:{
@@ -142,5 +176,10 @@ const styles = StyleSheet.create({
     },
     table_text:{
         margin:6
+    },
+    image:{
+        marginTop:15,
+        height:250,
+        resizeMode:'center'
     }
   });

@@ -5,22 +5,19 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Divider } from "react-native-elements";
 import { TorneoService } from "../../services/Torneo/TorneoService";
 import { resolve } from "inversify-react";
+import moment from 'moment';
+import 'moment/locale/es'
+
 
 interface Props {
     navigation: any
 }
 
 interface TorneosState{
-    torneos:Array<{id:number,fecha:Date,estado:string,ganador:string,nivel:string}>;
+    torneos:Array<{id:number,fecha:Date,estado:string,ganador:number,nombre:string,nivel:string}>;
     refreshing:boolean,
     processing:boolean
 }
-
-const wait = (timeout:number) => {
-    return new Promise(resolve => setTimeout(resolve, timeout));
-  }
-
-const cancha = require("../../../assets/images/cancha.jpg");
 
 export class TorneosScreen extends React.Component<Props,TorneosState>{
 
@@ -62,6 +59,12 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
         this.initTorneos().finally(()=>this.setState({refreshing:false}));
     }
 
+    getNiceDate(date:Date){
+        var localLocale = moment(date);
+        moment.locale('es');
+        return localLocale.format('LL'); 
+    }
+
     render(){
         return (
             <View style={{flex:1}}>
@@ -83,12 +86,19 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                                 t.estado!=='Finalizado'?{borderColor:'green'}:{}]}>
                                 <TouchableOpacity style={[styles.full_size,styles.circular_border]}
                                 onPress={() => this.props.navigation.navigate('jugadores',{id:t.id})}>
-                                    <Text style={[styles.text_button]}>{t.fecha}</Text>
                                     <Text style={[styles.text_button]}>{t.nivel}</Text>
+                                    <Text></Text>
+                                    <Text style={[styles.text_button]}>{this.getNiceDate(t.fecha)}</Text>
+                                    <Text></Text>
                                     <Divider/>
                                     {
                                         t.estado==='Finalizado'?
-                                        <Text style={[styles.text_button]}>Ganador: {t.ganador}</Text>:
+                                        (
+                                            <View>
+                                                <Text style={[styles.text_button]}>Ganador:</Text>
+                                                <Text style={[styles.text_button]}>{t.nombre}</Text>
+                                            </View>
+                                        ):
                                         <Text style={[styles.text_button]}>En curso...</Text>
                                     }
                                 </TouchableOpacity>

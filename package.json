@@ -28,6 +28,7 @@
     "inversify": "^5.1.1",
     "inversify-binding-decorators": "^4.0.0",
     "inversify-react": "^1.0.0",
+    "moment": "^2.29.1",
     "nan": "^2.14.2",
     "react": "16.13.1",
     "react-dom": "16.13.1",

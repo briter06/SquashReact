@@ -21,4 +21,8 @@ export class TorneoService {
         return axios.get(environment.API_URL+'torneos/'+id+'/jugadores');
     }
 
+    getPartidos(id:number,seccion:number){
+        return axios.get(environment.API_URL+'torneos/'+id+'/partidos/seccion/'+seccion);
+    }
+
 }

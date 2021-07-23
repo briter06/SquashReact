@@ -25,7 +25,8 @@ export default class TorneosNavigator extends React.Component<Props>{
 
                 <Stack.Screen name="jugadores" 
                 component={TorneoNavigator}
-                options={{ headerShown: false }}/>
+                options={{ title:'Fin de ciclo' }}
+                />
                 
             </Stack.Navigator>
         );
