@@ -13,7 +13,7 @@ interface Props {
 }
 
 interface JugadoresState{
-    jugadores:Array<{id:number,nombre:string,puntaje:number}>;
+    jugadores:Array<{id:number,nombre:string,puntaje:number,posicion:number}>;
     refreshing:boolean,
     processing:boolean,
     flexRows:number[],
@@ -91,7 +91,7 @@ export class JugadoresScreen extends React.Component<Props,JugadoresState>{
                             <Row flexArr={this.state.flexRows} data={this.state.tableHead} style={styles.table_head} textStyle={styles.table_text}/>
                             {
                                 this.state.jugadores.map((t,i)=>
-                                    <Row key={i} data={[i+1,t.nombre,t.puntaje]} flexArr={this.state.flexRows} textStyle={styles.table_text}/>
+                                    <Row key={i} data={[t.posicion,t.nombre,t.puntaje]} flexArr={this.state.flexRows} textStyle={styles.table_text}/>
                                 )
                             }
                             </Table>

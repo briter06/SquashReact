@@ -7,7 +7,18 @@ import { TorneoService } from "../../services/Torneo/TorneoService";
 import { resolve } from "inversify-react";
 import moment from 'moment';
 import 'moment/locale/es'
+import { FloatingAction } from "react-native-floating-action";
+import { AuthService } from "../../services/Auth/AuthService";
+import { Subscription } from "rxjs";
 
+const actions = [
+    {
+      text: "Torneo",
+      icon: require("../../../assets/images/cup_icon.png"),
+      name: "bt_create_torneo",
+      position: 2
+    }
+]
 
 interface Props {
     navigation: any
@@ -16,7 +27,8 @@ interface Props {
 interface TorneosState{
     torneos:Array<{id:number,fecha:Date,estado:string,ganador:number,nombre:string,nivel:string}>;
     refreshing:boolean,
-    processing:boolean
+    processing:boolean,
+    allowed:boolean;
 }
 
 export class TorneosScreen extends React.Component<Props,TorneosState>{
@@ -24,22 +36,33 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
     @resolve(TorneoService)
     private torneoService!:TorneoService;
 
+    @resolve(AuthService)
+    private authService!:AuthService;
+
     private _unsubscribe :any;
+    private initUserSubscription : Subscription;
 
     constructor(props:any){
         super(props);
         this.state = {
             torneos:[],
             refreshing:false,
-            processing:false
+            processing:false,
+            allowed:false
         }
+        this.initUserSubscription = new Subscription();
     }
 
     componentDidMount = () => {
+        this.setState({allowed:this.authService.isAuthorized(['Profesor','Admin'])});
         this._unsubscribe  = this.props.navigation.addListener('focus',
         () => {
             this.initTorneos();
         })
+        this.initUserSubscription = this.authService.getUser$().subscribe(()=>{
+            const allowed = this.authService.isAuthorized(['Profesor','Admin'])
+            this.setState({allowed:allowed});
+        });
     }
 
     initTorneos(){
@@ -52,6 +75,7 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
 
     componentWillUnmount() {
         this._unsubscribe();
+        this.initUserSubscription.unsubscribe();
     }
 
     onRefresh=()=>{
@@ -105,6 +129,17 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                             </View>
                         )
                     }
+                    {
+                        this.state.allowed?
+                        <FloatingAction
+                            actions={actions}
+                            onPressItem={name => {
+                                if(name==='bt_create_torneo'){
+                                    this.props.navigation.navigate('crearTorneo');
+                                }
+                            }}
+                        />:<View></View>
+                    }
                 </ScrollView>
             </View>
         );
@@ -116,6 +151,12 @@ const styles = StyleSheet.create({
     container:{
         alignItems: 'center',
         minHeight:'100%'
+    },
+    floating_button:{
+        position:'absolute',
+        bottom:20,
+        right:20,
+        zIndex:1000,
     },
     button_container:{
         width:'90%',

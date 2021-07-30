@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { TorneosScreen } from './torneos';
 import { JugadoresScreen } from './torneo/jugadores';
 import TorneoNavigator from './torneo/tabNavigator';
+import { CreateTorneoScreen } from './createTorneo';
 
 const Stack = createStackNavigator();
 
@@ -26,6 +27,11 @@ export default class TorneosNavigator extends React.Component<Props>{
                 <Stack.Screen name="jugadores" 
                 component={TorneoNavigator}
                 options={{ title:'Fin de ciclo' }}
+                />
+
+                <Stack.Screen name="crearTorneo" 
+                component={CreateTorneoScreen}
+                options={{ title:'Crear torneo' }}
                 />
                 
             </Stack.Navigator>

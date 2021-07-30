@@ -25,4 +25,23 @@ export class TorneoService {
         return axios.get(environment.API_URL+'torneos/'+id+'/partidos/seccion/'+seccion);
     }
 
+    crearTorneo(jugadores:any,nivel:string,rondas:number){
+        return axios.post(environment.API_URL+'torneos/',{
+            nivel:nivel,
+            rondas:rondas,
+            jugadores:jugadores
+        });
+    }
+
+    updateGanador(p:any,ganador:number){
+        console.log(JSON.stringify({
+            partido:p,
+            ganador:ganador
+        }));
+        return axios.put(environment.API_URL+'torneos/ganador',{
+            partido:p,
+            ganador:ganador
+        });
+    }
+
 }

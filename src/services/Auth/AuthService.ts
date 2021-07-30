@@ -5,14 +5,18 @@ import { AsyncStorage } from 'react-native';
 import { Actions } from 'react-native-router-flux'
 import {injectable} from 'inversify';
 import { StackActions } from '@react-navigation/native';
+import {Subject} from 'rxjs';
+
 
 @injectable()
 export class AuthService {
 
     private activeUser:any;
     private access_token:string;
+    private user$:Subject<boolean>;
 
     constructor(){
+        this.user$ = new Subject<boolean>();
         this.activeUser = {nombre:'',tipo:''}
         this.access_token = '';
         axios.interceptors.request.use((config) => {
@@ -52,7 +56,12 @@ export class AuthService {
         this.access_token = token;
         return axios.get(environment.API_URL+'auth/me').then((result:any)=>{
             this.activeUser = result.data;
+            this.user$.next(true);
         });
+    }
+
+    getUser$(){
+        return this.user$.asObservable();
     }
 
     updateUser(userInfo:any){
@@ -65,6 +74,13 @@ export class AuthService {
 
     getActiveUser(){
         return this.activeUser;
+    }
+
+    isAuthorized(types:Array<string>){
+        if(this.activeUser){
+            return types.includes(this.activeUser.tipo);
+        }
+        return false;
     }
 
 }

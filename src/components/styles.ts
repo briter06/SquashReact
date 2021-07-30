@@ -32,5 +32,30 @@ export const globalStyles = StyleSheet.create({
         letterSpacing: 0.25,
         color: 'white',
         textAlign:'center'
+      },
+      select : {
+          marginTop:15,
+          marginBottom:15,
+          width:'80%',
+          backgroundColor:'white',
+          borderWidth:2,
+          borderRadius:25
       }
+  });
+
+  export const pickerStyles = StyleSheet.create({
+    inputIOS:{
+        fontSize:20,
+        textAlign:'center',
+        color:'black',
+        paddingVertical:5,
+        paddingHorizontal:10
+    },
+    inputAndroid:{
+        fontSize:20,
+        textAlign:'center',
+        color:'black',
+        paddingVertical:5,
+        paddingHorizontal:10
+    }
   });

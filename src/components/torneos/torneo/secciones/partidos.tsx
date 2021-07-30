@@ -1,11 +1,15 @@
 import "reflect-metadata";
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { ScrollView } from "react-native-gesture-handler";
 import { Divider } from "react-native-elements";
 import { TorneoService } from "../../../../services/Torneo/TorneoService";
 import { resolve } from "inversify-react";
 import { Table, Row, Rows } from 'react-native-table-component';
+import { AuthService } from "../../../../services/Auth/AuthService";
+import Dialog from "react-native-dialog";
+import { globalStyles, pickerStyles } from "../../../styles";
+import RNPickerSelect from 'react-native-picker-select';
 
 interface Props {
     navigation: any;
@@ -20,17 +24,22 @@ interface Partido{
     jugador1:number,
     jugador2:number,
     ganador:number,
-    createdAt:Date,
-    updatedAt:Date,
     TorneoId:number,
     nombre_jugador1:string,
-    nombre_jugador2:string
+    nombre_jugador2:string,
+    partido1:number,
+    partido2:number,
 }
 
 interface PartidosState{
     partidos:Array<Partido>;
     refreshing:boolean,
     processing:boolean,
+    allowed:boolean,
+    visibleEdit:boolean,
+    currentPartido:Partido,
+    currentSelection?:number,
+    guardando:boolean,
 }
 
 
@@ -38,6 +47,9 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
 
     @resolve(TorneoService)
     private torneoService!:TorneoService;
+
+    @resolve(AuthService)
+    private authService!:AuthService;
 
     private _unsubscribe :any;
 
@@ -48,12 +60,21 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         this.state = {
             partidos:[],
             refreshing:false,
-            processing:false
+            processing:false,
+            allowed:false,
+            visibleEdit:false,
+            currentPartido:this.getBasicPartido(),
+            guardando:false
         }
         
     }
 
+    getBasicPartido(){
+        return {id:0,seccion:0,jugador1:0,jugador2:0,ganador:0,TorneoId:0,nombre_jugador1:'',nombre_jugador2:'',partido1:0,partido2:0}
+    }
+
     componentDidMount = () => {
+        this.setState({allowed:this.authService.isAuthorized(['Profesor','Admin'])});
         this._unsubscribe  = this.props.navigation.addListener('focus',
         () => {
             this.initPartidos();
@@ -69,6 +90,33 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         });
     }
 
+    editPartido=()=>{
+        if(this.state.currentSelection){
+            this.setState({guardando:true});
+            this.closeDialog();
+            this.torneoService.updateGanador({
+                id:this.state.currentPartido.id,
+                seccion:this.state.currentPartido.seccion,
+                TorneoId:this.state.currentPartido.TorneoId,
+                ganador:this.state.currentPartido.ganador,
+            },this.state.currentSelection)
+            .then(({data}:{data:{status:number}})=>{
+                this.initPartidos().finally(()=>{
+                    this.setState({guardando:false});
+                });
+            }).catch(err=>{
+                this.setState({guardando:false});
+                Alert.alert(
+                    "Error",
+                    "Error guardando el ganador",
+                    [
+                      { text: "OK", onPress: () => {}}
+                    ]
+                  );
+            });
+        }
+    }
+
     componentWillUnmount() {
         this._unsubscribe();
     }
@@ -78,11 +126,33 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         this.initPartidos().finally(()=>this.setState({refreshing:false}));
     }
 
+    openDialog=(p:Partido)=>{
+        if(p.jugador1!=0 && p.jugador2!=0 && p.jugador1!=-1 && p.jugador2!=-1){
+            if(p.ganador!=0 && p.ganador!=-1){
+                this.setState({currentPartido:p, visibleEdit:true,currentSelection:p.ganador});
+            }else{
+                this.setState({currentPartido:p, visibleEdit:true,currentSelection:p.jugador1});
+            }
+        }
+    }
+
+    closeDialog=()=>{
+        this.setState({currentPartido:this.getBasicPartido(),visibleEdit:false,currentSelection:undefined});
+    }
+
     esGanador=(partido:Partido,jugador:number)=>{
         if(partido.ganador!=0 && jugador===partido.ganador){
             return {color:'green'};
         }
-        return {};
+        return {color:'black'};
+    }
+
+    getJugadoresSelect(){
+        const p = this.state.currentPartido;
+        const options = [];
+        if(p.jugador1!=-1)options.push({label:p.nombre_jugador1,value:''+p.jugador1});
+        if(p.jugador2!=-1)options.push({label:p.nombre_jugador2,value:''+p.jugador2});
+        return options;
     }
 
     render(){
@@ -97,22 +167,39 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                 }>
 
                     <Text style={{fontWeight:'bold',fontSize:40}}>{this.props.title}</Text>
+                    <View>
+                        <Dialog.Container visible={this.state.guardando}>
+                        <Dialog.Title>Actualizando ganador</Dialog.Title>
+                        <ActivityIndicator size="large" color="#000000" />
+                        </Dialog.Container>
+                    </View>
+                    <View>
+                        <Dialog.Container visible={this.state.visibleEdit}>
+                        <Dialog.Title>Elegir ganador</Dialog.Title>
+                        <View style={[globalStyles.select,{width:'100%'}]}>
+                            <RNPickerSelect
+                                useNativeAndroidPickerStyle={false}
+                                style={pickerStyles}
+                                value={this.state.currentSelection}
+                                placeholder={{  }}
+                                onValueChange={(value) => this.setState({currentSelection:value})}
+                                items={this.getJugadoresSelect()}
+                            />
+                        </View>
+                        <Dialog.Button onPress={this.closeDialog} label="Cancelar" />
+                        <Dialog.Button onPress={this.editPartido} label="Guardar" />
+                        </Dialog.Container>
+                    </View>
 
                     {
                         this.state.processing ?
                         <ActivityIndicator size="large" color="#000000" />: 
-                        // this.state.jugadores.map((j,i)=>
-                        //     <View key={i}>
-                        //         <Text>{j.nombre}</Text>
-                        //     </View>
-                        // )
                         <View style={styles.partidos_container}>
                             {
                                 this.state.partidos.map((t,i)=>
-                                    // <Text key={i}>{t.id}</Text>
                                     <View key={i} style={[styles.button_container,styles.circular_border,t.ganador!=0?{borderColor:'green'}:{}]}>
                                         <TouchableOpacity style={[styles.full_size,styles.circular_border]}
-                                        onPress={() => {}}>
+                                        onPress={() => this.state.allowed?this.openDialog(t):{}}>
                                             <Text style={[styles.text_button, this.esGanador(t,t.jugador1)]}>{t.nombre_jugador1}</Text>
                                             <Text style={[styles.text_button]}>VS</Text>
                                             <Text style={[styles.text_button, this.esGanador(t,t.jugador2)]}>{t.nombre_jugador2}</Text>
