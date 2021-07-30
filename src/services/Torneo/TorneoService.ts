@@ -34,13 +34,17 @@ export class TorneoService {
     }
 
     updateGanador(p:any,ganador:number){
-        console.log(JSON.stringify({
-            partido:p,
-            ganador:ganador
-        }));
         return axios.put(environment.API_URL+'torneos/ganador',{
             partido:p,
             ganador:ganador
+        });
+    }
+
+    eliminarTorneo(id:number){
+        return axios.delete(environment.API_URL+'torneos/',{
+            data:{
+                id:id
+            }
         });
     }
 

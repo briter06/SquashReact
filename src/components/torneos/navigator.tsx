@@ -1,9 +1,7 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TorneosScreen } from './torneos';
-import { JugadoresScreen } from './torneo/jugadores';
 import TorneoNavigator from './torneo/tabNavigator';
 import { CreateTorneoScreen } from './createTorneo';
 
@@ -15,8 +13,6 @@ interface Props {
 
 export default class TorneosNavigator extends React.Component<Props>{
 
-    
-
     render(){
         return (
             <Stack.Navigator initialRouteName={"main"}>
@@ -26,7 +22,6 @@ export default class TorneosNavigator extends React.Component<Props>{
 
                 <Stack.Screen name="jugadores" 
                 component={TorneoNavigator}
-                options={{ title:'Fin de ciclo' }}
                 />
 
                 <Stack.Screen name="crearTorneo" 
@@ -38,9 +33,3 @@ export default class TorneosNavigator extends React.Component<Props>{
         );
     }
 }
-
-const styles = StyleSheet.create({
-    container: {
-      flex: 1
-    }
-  });

@@ -22,6 +22,7 @@ interface TorneoState{
     niveles:Array<any>;
     nivel:string;
     rondas:string;
+    rondasList:Array<any>;
     visibleAdd:boolean;
     nombreAdd:string;
     puntajeAdd:string;
@@ -49,6 +50,9 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
             ],
             nivel:'Avanzados',
             rondas:'1',
+            rondasList:[
+                {label:'1',value:'1'}
+            ],
             visibleAdd:false,
             nombreAdd:'',
             puntajeAdd:'',
@@ -57,16 +61,6 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         
     }
 
-    getRondas(){
-        const maxRondas = Math.ceil(Math.log(this.state.jugadores.length)/Math.log(2));
-        let rondas:any = [
-            {label:'1',value:'1'}
-        ];
-        for(let z = 2;z<=Math.min(maxRondas,4);z++){
-            rondas.push({label:''+z,value:''+z});
-        }
-        return rondas;
-    }
 
     componentDidMount = () => {
         this._unsubscribe  = this.props.navigation.addListener('focus',
@@ -88,18 +82,57 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         this.setState({visibleAdd:false,nombreAdd:'',puntajeAdd:''});
     }
 
+    updateRondas(jugadores:Array<any>){
+        const maxRondas = Math.min(Math.ceil(Math.log(jugadores.length)/Math.log(2)),4);
+        let rondas:any = [
+            {label:'1',value:'1'}
+        ];
+        for(let z = 2;z<=maxRondas;z++){
+            rondas.push({label:''+z,value:''+z});
+        }
+        return {rondas,maxRondas}
+    }
+
     agregarJugador=()=>{
         try{
+            const newJ = [...this.state.jugadores,{nombre:this.state.nombreAdd.trim(),puntaje:parseInt(this.state.puntajeAdd.trim())}];
+            const {rondas,maxRondas} = this.updateRondas(newJ);
             this.setState({
-                jugadores:[...this.state.jugadores,{nombre:this.state.nombreAdd.trim(),puntaje:parseInt(this.state.puntajeAdd.trim())}],
+                jugadores:newJ,
                 visibleAdd:false,
                 nombreAdd:'',
-                puntajeAdd:''
+                puntajeAdd:'',
+                rondasList:rondas,
+                rondas:''+maxRondas
             });
         }catch(err){
             Alert.alert(
                 "Error",
                 "Error agregando jugador",
+                [
+                  { text: "OK", onPress: () => {}}
+                ]
+              );
+        }
+    }
+
+    quitarJugador=(index:number)=>{
+        try{
+            const newJ = this.state.jugadores;
+            newJ.splice(index,1);
+            const {rondas,maxRondas} = this.updateRondas(newJ);
+            this.setState({
+                jugadores:newJ,
+                visibleAdd:false,
+                nombreAdd:'',
+                puntajeAdd:'',
+                rondasList:rondas,
+                rondas:''+maxRondas
+            });
+        }catch(err){
+            Alert.alert(
+                "Error",
+                "Error quitando jugador",
                 [
                   { text: "OK", onPress: () => {}}
                 ]
@@ -170,7 +203,7 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
                         value={this.state.rondas}
                         placeholder={{  }}
                         onValueChange={(value) => this.setState({rondas:value})}
-                        items={this.getRondas()}
+                        items={this.state.rondasList}
                     />
                     </View>
 
@@ -210,7 +243,7 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
                                     <Row key={i} data={[
                                         t.nombre,
                                         t.puntaje,
-                                        <TouchableOpacity onPress={()=>console.log('Hola')} style={{width:'100%',alignItems:'center'}}>
+                                        <TouchableOpacity onPress={()=>this.quitarJugador(i)} style={{width:'100%',alignItems:'center'}}>
                                             <MaterialIcons name="delete" size={24} color="black" />
                                         </TouchableOpacity>
                                     ]} flexArr={this.state.flexRows} textStyle={styles.table_text}/>
