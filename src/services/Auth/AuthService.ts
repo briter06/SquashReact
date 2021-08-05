@@ -65,7 +65,11 @@ export class AuthService {
     }
 
     updateUser(userInfo:any){
-        return axios.put(environment.API_URL+'auth/me',userInfo);
+        return axios.put(environment.API_URL+'auth/me',{
+            username: userInfo.username,
+            nombre: userInfo.nombre,
+            correo:userInfo.correo?userInfo.correo:''
+        });
     }
 
     updatePassword(password:string,currPassword:string){
@@ -83,4 +87,23 @@ export class AuthService {
         return false;
     }
 
+    getUsers(){
+        return axios.get(environment.API_URL+'auth/users');
+    }
+
+    agregarUsuario(newUser:any){
+        return axios.post(environment.API_URL+'auth/signup',newUser);
+    }
+
+    editarUsuario(newUser:any,id:number){
+        return axios.put(environment.API_URL+`auth/users/${id}`,newUser);
+    }
+
+    eliminarUsuario(id:number){
+        return axios.delete(environment.API_URL+'auth/users',{
+            data:{
+                id:id
+            }
+        });
+    }
 }

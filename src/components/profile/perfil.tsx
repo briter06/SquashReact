@@ -39,7 +39,7 @@ export class PerfilScreen extends React.Component<Props>{
 
     valid = ()=>{
         return this.state.user.username.trim()!=='' && this.state.user.nombre.trim()!==''
-        && this.state.user.correo.trim()!==''
+        && this.state.user.correo?.trim()!==''
     }
 
     updateUser = () => {
@@ -74,6 +74,14 @@ export class PerfilScreen extends React.Component<Props>{
                     ]
                   );
             }
+        }).catch(err=>{
+            Alert.alert(
+                "Error",
+                "Error interno. Contactar a administrador.",
+                [
+                  { text: "OK", onPress: () => this.setState({proccessing:false})}
+                ]
+              );
         });
     }
 

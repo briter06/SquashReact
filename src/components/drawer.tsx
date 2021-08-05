@@ -10,6 +10,7 @@ import ProfileComponent from "./profile";
 import AboutNavigator from "./about/navigator";
 import ProfileNavigator from "./profile/navigator";
 import TorneosNavigator from "./torneos/navigator";
+import { UsuariosScreen } from "./usuarios";
 
 const Drawer = createDrawerNavigator();
 
@@ -24,7 +25,8 @@ export class DrawerScreen extends React.Component<Props>{
 
     state = {
         isProgress :true,
-        user:{nombre:'',tipo:''}
+        user:{nombre:'',tipo:''},
+        allowed:false
     }
 
     constructor(props:any){
@@ -37,7 +39,8 @@ export class DrawerScreen extends React.Component<Props>{
 
     updateUser = ()=>{
         this.authService.initUser().finally(()=>{
-            this.setState({isProgress:false,user:this.authService.getActiveUser()});
+            this.setState({isProgress:false,user:this.authService.getActiveUser(),
+                allowed:this.authService.isAuthorized(['Profesor','Admin'])});
         });
     }
 
@@ -84,6 +87,14 @@ export class DrawerScreen extends React.Component<Props>{
                     options={{
                         title:'Sobre Squash'
                     }}/>
+
+                    {
+                        this.state.allowed?
+                        <Drawer.Screen name="usuarios" component={UsuariosScreen} 
+                        options={{
+                            title:'Usuarios'
+                        }}/>:null
+                    }
                 </Drawer.Navigator>
             // </NavigationContainer>
         );
