@@ -1,10 +1,7 @@
 import 'reflect-metadata';
 import {environment} from '../../../environment';
 import axios from 'axios';
-import { AsyncStorage } from 'react-native';
-import { Actions } from 'react-native-router-flux'
 import {injectable} from 'inversify';
-import { StackActions } from '@react-navigation/native';
 
 @injectable()
 export class TorneoService {
@@ -48,4 +45,20 @@ export class TorneoService {
         });
     }
 
+    getMaxSeccion(id:number){
+        return axios.get(environment.API_URL+`torneos/${id}/seccion`);
+    }
+
+    uploadImage(data:FormData,id:number){
+        let config = {
+            headers: {
+                'content-type': 'multipart/form-data'
+            }
+        }
+        return axios.post(environment.API_URL+`torneos/${id}/image`,data,config);
+    }
+
+    getImage(id:number){
+        return axios.get(environment.API_URL+`torneos/${id}/image`);
+    }
 }

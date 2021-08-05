@@ -10,6 +10,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons'; 
 import Dialog from "react-native-dialog";
 import { globalStyles, pickerStyles } from "../styles";
+import { environment } from "../../../environment";
 
 interface Props {
     navigation: any
@@ -83,7 +84,7 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
     }
 
     updateRondas(jugadores:Array<any>){
-        const maxRondas = Math.min(Math.ceil(Math.log(jugadores.length)/Math.log(2)),4);
+        const maxRondas = Math.min(Math.ceil(Math.log(jugadores.length)/Math.log(2)),environment.MAX_ROUNDS);
         let rondas:any = [
             {label:'1',value:'1'}
         ];
@@ -229,7 +230,7 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
                         </Dialog.Container>
                     </View>
 
-                    <Text style={{fontWeight:'bold',fontSize:30}}>Jugadores</Text>
+                    <Text style={{fontWeight:'bold',fontSize:30}}>Jugadores ({this.state.jugadores.length})</Text>
                     <TouchableOpacity onPress={this.openDialog}>
                         <AntDesign name="pluscircle" size={28} color="black" />
                     </TouchableOpacity>

@@ -2,14 +2,16 @@ import "reflect-metadata";
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { ScrollView } from "react-native-gesture-handler";
-import { Divider } from "react-native-elements";
 import { TorneoService } from "../../../../services/Torneo/TorneoService";
 import { resolve } from "inversify-react";
-import { Table, Row, Rows } from 'react-native-table-component';
 import { AuthService } from "../../../../services/Auth/AuthService";
 import Dialog from "react-native-dialog";
 import { globalStyles, pickerStyles } from "../../../styles";
 import RNPickerSelect from 'react-native-picker-select';
+import * as ImagePicker from 'expo-image-picker';
+import { FontAwesome } from '@expo/vector-icons'; 
+import { Foundation } from '@expo/vector-icons'; 
+import ImgViewer from "../../../imgViewer";
 
 interface Props {
     navigation: any;
@@ -40,6 +42,10 @@ interface PartidosState{
     currentPartido:Partido,
     currentSelection?:number,
     guardando:boolean,
+    subiendo: boolean,
+    image?:string,
+    imgRequest:boolean,
+    imgViewerVisible:boolean
 }
 
 
@@ -64,7 +70,10 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
             allowed:false,
             visibleEdit:false,
             currentPartido:this.getBasicPartido(),
-            guardando:false
+            guardando:false,
+            subiendo:false,
+            imgRequest:false,
+            imgViewerVisible:false
         }
         
     }
@@ -79,6 +88,14 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         () => {
             this.initPartidos();
         })
+        this.initImage();
+    }
+
+    initImage = ()=>{
+        this.torneoService.getImage(this.props.id_torneo)
+        .then(({data})=>{
+            this.setState({image:data,imgRequest:true});
+        });
     }
 
     initPartidos(){
@@ -124,6 +141,7 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
     onRefresh=()=>{
         this.setState({refreshing:true});
         this.initPartidos().finally(()=>this.setState({refreshing:false}));
+        this.initImage();
     }
 
     openDialog=(p:Partido)=>{
@@ -155,6 +173,69 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         return options;
     }
 
+    takePicture = async ()=>{
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            //   aspect: [4, 3],
+        });
+        this.processResultImage(result);
+    }
+
+    selectPicture = async ()=>{
+        let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            //   aspect: [4, 3],
+        });
+        this.processResultImage(result);
+    }
+
+
+    processResultImage = (result:any) => {
+        if (result.cancelled) {
+          return;
+        }
+        
+        let localUri = result.uri;
+        let filename = localUri.split('/').pop();
+      
+        let match = /\.(\w+)$/.exec(filename||'');
+        let type = match ? `image/${match[1]}` : `image`;
+      
+        let formData = new FormData();
+        formData.append('photo', { uri: localUri, name: filename, type } as any);
+        this.setState({subiendo:true});
+        this.torneoService.uploadImage(formData,this.props.id_torneo)
+        .then(({data})=>{
+            this.setState({subiendo:false});
+            if(data.status===1){
+                Alert.alert(
+                    "Correcto!",
+                    "Imagen subida correctamente",
+                    [
+                      { text: "OK", onPress: () => {}}
+                    ]
+                  );
+            }else{
+                Alert.alert(
+                    "Error!",
+                    "Ha ocurrido un error. Vuelva a intentar!",
+                    [
+                      { text: "OK", onPress: () => {}}
+                    ]
+                  );
+            }
+        }).catch((err)=>{
+            this.setState({subiendo:false});
+            Alert.alert(
+                "Error!",
+                "Ha ocurrido un error. Vuelva a intentar!",
+                [
+                  { text: "OK", onPress: () => {}}
+                ]
+              );
+        });
+      }
+
     render(){
         return (
             <View style={{flex:1}}>
@@ -170,6 +251,12 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                     <View>
                         <Dialog.Container visible={this.state.guardando}>
                         <Dialog.Title>Actualizando ganador</Dialog.Title>
+                        <ActivityIndicator size="large" color="#000000" />
+                        </Dialog.Container>
+                    </View>
+                    <View>
+                        <Dialog.Container visible={this.state.subiendo}>
+                        <Dialog.Title>Subiendo imagen</Dialog.Title>
                         <ActivityIndicator size="large" color="#000000" />
                         </Dialog.Container>
                     </View>
@@ -209,10 +296,47 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                             }
                             {
                                 this.props.seccion==1 && this.state.partidos.length!==0? 
-                                    <Image
-                                        style={styles.image}
-                                        source={this.cupImg}
-                                    />
+                                    
+                                    <View style={{width:'100%',marginVertical:20}}>
+                                    
+                                    {
+                                        this.state.allowed ? 
+                                        <View style={{flexDirection:'row'}}>
+                                            <TouchableOpacity style={styles.imageIcon}
+                                            onPress={this.takePicture}>
+                                                <FontAwesome name="camera" size={30} color="black" />
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity style={styles.imageIcon}
+                                            onPress={this.selectPicture}>
+                                                <Foundation name="photo" size={30} color="black" />
+                                            </TouchableOpacity>
+                                        </View>
+                                        :<Text></Text>
+                                    }
+
+                                    {
+                                        this.state.image?
+                                        <View>
+                                            <TouchableOpacity
+                                            onPress={()=>this.setState({imgViewerVisible:true})}>
+                                                <Image
+                                                style={styles.image}
+                                                source={{uri:this.state.image}}
+                                                />
+                                            </TouchableOpacity>
+                                            <ImgViewer
+                                            image={this.state.image}
+                                            visible={this.state.imgViewerVisible}
+                                            close={()=>this.setState({imgViewerVisible:false})} />
+                                        </View>
+                                        : 
+                                        !this.state.imgRequest ? 
+                                        <ActivityIndicator size="large" color="#000000" />
+                                        :<Text></Text>
+                                    }
+                                    
+                                    </View>
                                 : <View/>
                             }
                         </View>
@@ -265,8 +389,13 @@ const styles = StyleSheet.create({
         margin:6
     },
     image:{
-        marginTop:15,
-        height:250,
-        resizeMode:'center'
+        marginTop:10,
+        height:300,
+        resizeMode: 'contain'
+    },
+    imageIcon:{
+        flex:1,
+        alignItems:'center',
+        justifyContent:'center'
     }
   });
