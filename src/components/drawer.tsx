@@ -2,7 +2,6 @@ import "reflect-metadata";
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
-import { MainScreen } from "./mainScreen";
 import { Divider } from "react-native-elements/dist/divider/Divider";
 import { resolve } from "inversify-react";
 import { AuthService } from "../services/Auth/AuthService";
@@ -11,6 +10,18 @@ import AboutNavigator from "./about/navigator";
 import ProfileNavigator from "./profile/navigator";
 import TorneosNavigator from "./torneos/navigator";
 import { UsuariosScreen } from "./usuarios";
+import * as Notifications from 'expo-notifications';
+import { NotificationService } from "../services/Notifications/NotificationService";
+import {  Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
 
 const Drawer = createDrawerNavigator();
 
@@ -23,6 +34,9 @@ export class DrawerScreen extends React.Component<Props>{
     @resolve(AuthService)
     private authService!:AuthService;
 
+    @resolve(NotificationService)
+    private notificationService!:NotificationService;
+
     state = {
         isProgress :true,
         user:{nombre:'',tipo:''},
@@ -34,6 +48,7 @@ export class DrawerScreen extends React.Component<Props>{
     }
 
     componentDidMount() {
+        this.registerForPushNotificationsAsync();
         this.updateUser();
     }
 
@@ -44,9 +59,38 @@ export class DrawerScreen extends React.Component<Props>{
         });
     }
 
+    registerForPushNotificationsAsync = async ()=> {
+        let token;
+        if (Constants.isDevice) {
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+          if (finalStatus !== 'granted') {
+            alert('Failed to get push token for push notification!');
+            return;
+          }
+          token = (await Notifications.getExpoPushTokenAsync()).data;
+        } else {
+          alert('Must use physical device for Push Notifications');
+        }
+      
+        if (Platform.OS === 'android') {
+          Notifications.setNotificationChannelAsync('default', {
+            name: 'Squash - El Cubo',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+          });
+        }
+      
+        await this.notificationService.sendPushToken(token);
+      }
+
     render(){
         return (
-            // <NavigationContainer>
                 <Drawer.Navigator initialRouteName="torneos"
                 drawerContent={props => {
                     return (
@@ -73,11 +117,6 @@ export class DrawerScreen extends React.Component<Props>{
                         title:'Perfil'
                     }}/>
 
-                    {/* <Drawer.Screen name="main" component={MainScreen} 
-                    options={{
-                        title:'Inicio'
-                    }}/> */}
-
                     <Drawer.Screen name="torneos" component={TorneosNavigator} 
                     options={{
                         title:'Torneos'
@@ -96,16 +135,6 @@ export class DrawerScreen extends React.Component<Props>{
                         }}/>:null
                     }
                 </Drawer.Navigator>
-            // </NavigationContainer>
         );
     }
 }
-
-
-const styles = StyleSheet.create({
-    container:{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex:1
-    },
-  });

@@ -6,7 +6,6 @@ import AppMainComponent from './src/components/app';
 
 export default function App() {
 
-
   return (
     <Provider container={container} key={container.id}>
       <AppMainComponent></AppMainComponent>
