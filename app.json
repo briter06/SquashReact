@@ -21,6 +21,7 @@
     },
     "android": {
       "useNextNotificationsApi":true,
+      "icon": "./assets/images/push_icon.png",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/ic_launcher_foreground.png",
