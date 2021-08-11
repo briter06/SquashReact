@@ -20,6 +20,8 @@
       "supportsTablet": true
     },
     "android": {
+      "useNextNotificationsApi":true,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/ic_launcher_foreground.png",
         "backgroundColor": "#D8D00B"
