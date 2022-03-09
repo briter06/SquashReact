@@ -53,7 +53,7 @@ export class DrawerScreen extends React.Component<Props>{
     }
 
     updateUser = ()=>{
-        this.authService.initUser().finally(()=>{
+        this.authService.initUser(this.props.navigation).then((result)=>{
             this.setState({isProgress:false,user:this.authService.getActiveUser(),
                 allowed:this.authService.isAuthorized(['Profesor','Admin'])});
         });

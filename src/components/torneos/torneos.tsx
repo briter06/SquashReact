@@ -106,13 +106,13 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                         this.state.processing ?
                         <ActivityIndicator size="large" color="#000000" />: 
                         this.state.torneos.map((t,i)=>
-                            <View key={i} style={[styles.button_container,styles.circular_border,
+                            <View key={i} style={[styles.button_container,styles.circular_border,styles.bowWithShadow,
                                 t.estado!=='Finalizado'?{borderColor:'green'}:{}]}>
                                 <TouchableOpacity style={[styles.full_size,styles.circular_border]}
                                 onPress={() => this.props.navigation.navigate('jugadores',{id:t.id})}>
-                                    <Text style={[styles.text_button]}>{t.nivel}</Text>
-                                    <Text></Text>
                                     <Text style={[styles.text_button]}>{this.getNiceDate(t.fecha)}</Text>
+                                    <Text></Text>
+                                    <Text style={[styles.text_button]}>{t.nivel}</Text>
                                     <Text></Text>
                                     <Divider/>
                                     {
@@ -160,13 +160,25 @@ const styles = StyleSheet.create({
     },
     button_container:{
         width:'90%',
+        padding: 10,
         minHeight:120,
         marginTop:30,
-        borderWidth: 3,
-        justifyContent:'center'
+        justifyContent:'center',
+        backgroundColor: 'white',
+    },
+    bowWithShadow:{
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 5,
+        },
+        shadowOpacity: 0.36,
+        shadowRadius: 6.68,
+
+        elevation: 11,
     },
     circular_border:{
-        borderRadius:25,
+        borderRadius:30,
     },
     full_size:{
         width:'100%',

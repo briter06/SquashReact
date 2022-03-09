@@ -2,7 +2,7 @@
   "expo": {
     "name": "Squash - El Cubo",
     "slug": "squash-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/ic_launcher.png",
     "splash": {
@@ -28,7 +28,7 @@
         "backgroundColor": "#D8D00B"
       },
       "package": "squash.cubo",
-      "versionCode": 3
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png"

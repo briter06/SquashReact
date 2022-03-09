@@ -20,13 +20,15 @@ export class AuthService {
         this.activeUser = {nombre:'',tipo:''}
         this.access_token = '';
         axios.interceptors.request.use((config) => {
-            if(this.isLoggedIn()){
-                config.headers.Authorization = "Bearer "+this.access_token;
-            }
-            return config;
-          }, (error) => {
+            return this.isLoggedIn().then(res=>{
+                if(res){
+                    config.headers.Authorization = "Bearer "+this.access_token;
+                }
+                return Promise.resolve(config)
+            });
+        }, (error) => {
             return Promise.reject(error);
-          });
+        });
     }
 
     login(username:string,password:String){
@@ -51,12 +53,15 @@ export class AuthService {
         return (await AsyncStorage.getItem("token"))!=null;
     }
 
-    async initUser(){
+    async initUser(navigator:any){
         const token = await AsyncStorage.getItem("token")||'';
         this.access_token = token;
         return axios.get(environment.API_URL+'auth/me').then((result:any)=>{
+            console.log(result.data)
             this.activeUser = result.data;
             this.user$.next(true);
+        }).catch(err=>{
+            this.logout(navigator)
         });
     }
 

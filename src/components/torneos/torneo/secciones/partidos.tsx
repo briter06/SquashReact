@@ -92,6 +92,10 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
     }
 
     initImage = ()=>{
+        this.setState({
+            image: undefined,
+            imgRequest: false
+        })
         this.torneoService.getImage(this.props.id_torneo)
         .then(({data})=>{
             this.setState({image:data,imgRequest:true});
@@ -160,9 +164,9 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
 
     esGanador=(partido:Partido,jugador:number)=>{
         if(partido.ganador!=0 && jugador===partido.ganador){
-            return {color:'green'};
+            return true;
         }
-        return {color:'black'};
+        return false
     }
 
     getJugadoresSelect(){
@@ -212,7 +216,7 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                     "Correcto!",
                     "Imagen subida correctamente",
                     [
-                      { text: "OK", onPress: () => {}}
+                      { text: "OK", onPress: () => {this.onRefresh()}}
                     ]
                   );
             }else{
@@ -284,12 +288,21 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                         <View style={styles.partidos_container}>
                             {
                                 this.state.partidos.map((t,i)=>
-                                    <View key={i} style={[styles.button_container,styles.circular_border,t.ganador!=0?{borderColor:'green'}:{}]}>
-                                        <TouchableOpacity style={[styles.full_size,styles.circular_border]}
+                                    <View key={i} style={[styles.button_container,t.ganador!=0?{}:{}]}>
+                                        <TouchableOpacity style={[styles.full_size]}
                                         onPress={() => this.state.allowed?this.openDialog(t):{}}>
-                                            <Text style={[styles.text_button, this.esGanador(t,t.jugador1)]}>{t.nombre_jugador1}</Text>
-                                            <Text style={[styles.text_button]}>VS</Text>
-                                            <Text style={[styles.text_button, this.esGanador(t,t.jugador2)]}>{t.nombre_jugador2}</Text>
+                                            <View style={[styles.gameRow, this.esGanador(t,t.jugador1) ? styles.ganador : {}, this.esGanador(t,t.jugador2) ? styles.perdedor : {}]}>
+                                                <Text style={[styles.text_button]}>{t.nombre_jugador1}</Text>
+                                            </View>
+                                            <View
+                                                style={{
+                                                    borderBottomColor: 'white',
+                                                    borderBottomWidth: 1,
+                                                }}
+                                                />
+                                            <View style={[styles.gameRow, this.esGanador(t,t.jugador2) ? styles.ganador : {}, this.esGanador(t,t.jugador1) ? styles.perdedor : {}]}>
+                                                <Text style={[styles.text_button]}>{t.nombre_jugador2}</Text>
+                                            </View>
                                         </TouchableOpacity>
                                     </View>
                                 )
@@ -356,13 +369,15 @@ const styles = StyleSheet.create({
     },
     button_container:{
         width:'90%',
-        minHeight:120,
+        minHeight:80,
         marginTop:30,
-        borderWidth: 3,
-        justifyContent:'center'
+        justifyContent:'center',
     },
-    circular_border:{
-        borderRadius:25,
+    gameRow:{
+        width:'100%',
+        backgroundColor: '#A8A8A8',
+        minHeight: 45,
+        justifyContent:'center'
     },
     full_size:{
         width:'100%',
@@ -372,8 +387,8 @@ const styles = StyleSheet.create({
         width:'100%',
         textAlign:'center',
         textAlignVertical:'bottom',
-        fontWeight:'bold',
         fontSize:20,
+        color: 'white'
     },
     partidos_container:{
         width:'100%',
@@ -397,5 +412,11 @@ const styles = StyleSheet.create({
         flex:1,
         alignItems:'center',
         justifyContent:'center'
+    },
+    ganador: {
+        backgroundColor: '#0088b6'
+    },
+    perdedor: {
+        opacity: 0.6
     }
   });
