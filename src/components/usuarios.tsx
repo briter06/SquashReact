@@ -172,7 +172,6 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
             });
             this.authService.editarUsuario(newU,this.state.idEdit)
             .then(({data})=>{
-                console.log(data);
                 this.setState({
                     editando:false
                 });
@@ -189,7 +188,6 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
                     }
                 }
             }).catch(err=>{
-                console.log(err);
                 this.setState({
                     editando:false
                 });
