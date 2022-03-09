@@ -48,8 +48,10 @@ export class DrawerScreen extends React.Component<Props>{
     }
 
     componentDidMount() {
+      try{
         this.registerForPushNotificationsAsync();
-        this.updateUser();
+      }catch(err){}
+      this.updateUser();
     }
 
     updateUser = ()=>{

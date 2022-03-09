@@ -12,6 +12,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { Foundation } from '@expo/vector-icons'; 
 import ImgViewer from "../../../imgViewer";
+import { StatusCodes } from "../../../../enums/statusCodes.enum";
+import { ErrorService } from "../../../../services/Error/ErrorService";
 
 interface Props {
     navigation: any;
@@ -57,9 +59,10 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
     @resolve(AuthService)
     private authService!:AuthService;
 
-    private _unsubscribe :any;
+    @resolve(ErrorService)
+    private errorService!:ErrorService;
 
-    private cupImg:any = require('../../../../../assets/images/cup.png');
+    private _unsubscribe :any;
 
     constructor(props:any){
         super(props);
@@ -121,10 +124,21 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                 TorneoId:this.state.currentPartido.TorneoId,
                 ganador:this.state.currentPartido.ganador,
             },this.state.currentSelection)
-            .then(({data}:{data:{status:number}})=>{
-                this.initPartidos().finally(()=>{
+            .then(({data}:{data:{data?:{status:number}}})=>{
+                if(data.data?.status===StatusCodes.SUCCESS){
+                    this.initPartidos().finally(()=>{
+                        this.setState({guardando:false});
+                    });
+                }else{
                     this.setState({guardando:false});
-                });
+                    Alert.alert(
+                        "Error",
+                        "Error guardando el ganador",
+                        [
+                          { text: "OK", onPress: () => {}}
+                        ]
+                      );
+                }
             }).catch(err=>{
                 this.setState({guardando:false});
                 Alert.alert(
@@ -211,7 +225,7 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
         this.torneoService.uploadImage(formData,this.props.id_torneo)
         .then(({data})=>{
             this.setState({subiendo:false});
-            if(data.status===1){
+            if(data.data?.status===StatusCodes.SUCCESS){
                 Alert.alert(
                     "Correcto!",
                     "Imagen subida correctamente",
@@ -220,23 +234,25 @@ export class PartidosScreen extends React.Component<Props,PartidosState>{
                     ]
                   );
             }else{
+                const {title,text} = this.errorService.getErrorInfo(data)
                 Alert.alert(
-                    "Error!",
-                    "Ha ocurrido un error. Vuelva a intentar!",
+                    title,
+                    text,
                     [
-                      { text: "OK", onPress: () => {}}
+                        { text: "OK", onPress: () => this.setState({processing:false})}
                     ]
-                  );
+                );
             }
         }).catch((err)=>{
             this.setState({subiendo:false});
+            const {title,text} = this.errorService.getErrorInfo(err.response.data)
             Alert.alert(
-                "Error!",
-                "Ha ocurrido un error. Vuelva a intentar!",
+                title,
+                text,
                 [
-                  { text: "OK", onPress: () => {}}
+                    { text: "OK", onPress: () => this.setState({processing:false})}
                 ]
-              );
+            );
         });
       }
 

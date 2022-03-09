@@ -118,7 +118,7 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                                     {
                                         t.estado==='Finalizado'?
                                         (
-                                            <View>
+                                            <View style={[styles.ganadorContainer]}>
                                                 <Text style={[styles.text_button]}>Ganador:</Text>
                                                 <Text style={[styles.text_button]}>{t.nombre}</Text>
                                             </View>
@@ -179,6 +179,11 @@ const styles = StyleSheet.create({
     },
     circular_border:{
         borderRadius:30,
+    },
+    ganadorContainer: {
+        backgroundColor: 'rgba(0,230,0,0.3)',
+        borderBottomLeftRadius:25,
+        borderBottomRightRadius:25,
     },
     full_size:{
         width:'100%',

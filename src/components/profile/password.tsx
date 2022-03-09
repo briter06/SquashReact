@@ -5,6 +5,7 @@ import { resolve } from "inversify-react";
 import { AuthService } from "../../services/Auth/AuthService";
 import { TextInput } from 'react-native-paper';
 import { globalStyles } from "../styles";
+import { ErrorService } from "../../services/Error/ErrorService";
 
 interface Props {
     navigation: any,
@@ -15,6 +16,9 @@ export class PasswordScreen extends React.Component<Props>{
 
     @resolve(AuthService)
     private authService!:AuthService;
+
+    @resolve(ErrorService)
+    private errorService!:ErrorService;
 
     private _unsubscribe :any;
 
@@ -54,25 +58,7 @@ export class PasswordScreen extends React.Component<Props>{
         this.setState({processing:true});
         this.authService.updatePassword(this.state.password.trim(),this.state.currPassword.trim()).then(({data})=>{
             this.setState({processing:false});
-            if(data.status==0){
-                if(data.errors[0] === 'incorrect_password'){
-                    Alert.alert(
-                        "Error",
-                        "Contraseña actual incorrecta",
-                        [
-                          { text: "OK", onPress: () => this.setState({proccessing:false})}
-                        ]
-                      );
-                }else if(data.errors[0] === 'internal_server_error'){
-                    Alert.alert(
-                        "Error",
-                        "Error interno. Contactar a administrador.",
-                        [
-                          { text: "OK", onPress: () => this.setState({proccessing:false})}
-                        ]
-                      );
-                }
-            }else{
+            if(data.data){
                 this.authService.logout(this.props.navigation)
                 Alert.alert(
                     "Exito!",
@@ -81,7 +67,25 @@ export class PasswordScreen extends React.Component<Props>{
                       { text: "OK", onPress: () => {}}
                     ]
                   );
+            }else{
+                const {title,text} = this.errorService.getErrorInfo(data)
+                Alert.alert(
+                    title,
+                    text,
+                    [
+                        { text: "OK", onPress: () => this.setState({processing:false})}
+                    ]
+                );
             }
+        }).catch(err=>{
+            const {title,text} = this.errorService.getErrorInfo(err.response.data)
+            Alert.alert(
+                title,
+                text,
+                [
+                    { text: "OK", onPress: () => this.setState({processing:false})}
+                ]
+            );
         });
     }
 

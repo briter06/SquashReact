@@ -5,6 +5,8 @@ import { resolve } from "inversify-react";
 import { AuthService } from "../../services/Auth/AuthService";
 import { TextInput } from 'react-native-paper';
 import { globalStyles } from "../styles";
+import { StatusCodes } from "../../enums/statusCodes.enum";
+import { ErrorService } from "../../services/Error/ErrorService";
 
 interface Props {
     navigation: any,
@@ -15,6 +17,9 @@ export class PerfilScreen extends React.Component<Props>{
 
     @resolve(AuthService)
     private authService!:AuthService;
+
+    @resolve(ErrorService)
+    private errorService!:ErrorService;
 
     private _unsubscribe :any;
 
@@ -46,25 +51,7 @@ export class PerfilScreen extends React.Component<Props>{
         this.setState({processing:true});
         this.authService.updateUser(this.state.user).then(({data})=>{
             this.setState({processing:false});
-            if(data.status==0){
-                if(data.errors[0] === 'username_exists'){
-                    Alert.alert(
-                        "Error",
-                        "Nombre de usuario ya existe",
-                        [
-                          { text: "OK", onPress: () => this.setState({proccessing:false})}
-                        ]
-                      );
-                }else if(data.errors[0] === 'internal_server_error'){
-                    Alert.alert(
-                        "Error",
-                        "Error interno. Contactar a administrador.",
-                        [
-                          { text: "OK", onPress: () => this.setState({proccessing:false})}
-                        ]
-                      );
-                }
-            }else{
+            if(data.data?.status===StatusCodes.SUCCESS){
                 this.props.updateUser();
                 Alert.alert(
                     "Exito!",
@@ -73,15 +60,25 @@ export class PerfilScreen extends React.Component<Props>{
                       { text: "OK", onPress: () => this.setState({proccessing:false})}
                     ]
                   );
+            }else{
+                const {title,text} = this.errorService.getErrorInfo(data)
+                Alert.alert(
+                    title,
+                    text,
+                    [
+                        { text: "OK", onPress: () => this.setState({processing:false})}
+                    ]
+                );
             }
         }).catch(err=>{
+            const {title,text} = this.errorService.getErrorInfo(err.response.data)
             Alert.alert(
-                "Error",
-                "Error interno. Contactar a administrador.",
+                title,
+                text,
                 [
-                  { text: "OK", onPress: () => this.setState({proccessing:false})}
+                    { text: "OK", onPress: () => this.setState({processing:false})}
                 ]
-              );
+            );
         });
     }
 

@@ -59,6 +59,7 @@ export class AuthService {
         return axios.get(environment.API_URL+'auth/me').then((result:any)=>{
             this.activeUser = result.data;
             this.user$.next(true);
+            return Promise.resolve(result)
         }).catch(err=>{
             this.logout(navigator)
         });

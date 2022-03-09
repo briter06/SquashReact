@@ -10,6 +10,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import Dialog from "react-native-dialog";
 import { globalStyles, pickerStyles } from "./styles";
 import { AuthService } from "../services/Auth/AuthService";
+import { ErrorService } from "../services/Error/ErrorService";
 
 interface Props {
     navigation: any
@@ -35,6 +36,9 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
 
     @resolve(AuthService)
     private authService!:AuthService;
+
+    @resolve(ErrorService)
+    private errorService!:ErrorService;
 
     private _unsubscribe :any;
 
@@ -71,7 +75,7 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
         return this.authService.getUsers()
         .then(({data})=>{
             this.setState({consultando:false});
-            if(data.status===1){
+            if(data.data){
                 this.setState({usuarios:data.data.usuarios});
             }
         });
@@ -108,26 +112,25 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
                 this.setState({
                     creando:false
                 });
-                if(data.status===1){
+                if(data.data){
                     this.initUsuarios().finally(()=>{
                         this.usuarioAgregado();
                         this.closeDialog();
                     });
                 }else{
-                    if(data.errors.includes('username_exists')){
-                        this.usuarioExiste();
-                    }else{
-                        this.errorCreando();
-                    }
+                    this.showErrorModal(data);
                 }
             }).catch(err=>{
                 this.setState({
                     creando:false
                 });
-                this.errorCreando();
+                this.showErrorModal(err.response.data);
             });
         }catch(err){
-            this.errorCreando();
+            this.setState({
+                creando:false
+            });
+            this.showErrorModal();
         }
     }
 
@@ -141,23 +144,25 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
                 this.setState({
                     editando:false
                 });
-                if(data.status===1){
+                if(data.data){
                     this.initUsuarios().finally(()=>{
                         this.usuarioEliminado();
                         this.closeDialogEdit();
                     });
                 }else{
-                    this.errorEliminando();
-                    
+                    this.showErrorModal(data);
                 }
             }).catch(err=>{
                 this.setState({
                     editando:false
                 });
-                this.errorEliminando();
+                this.showErrorModal(err.response.data);
             });
         }catch(err){
-            this.errorEliminando();
+            this.setState({
+                editando:false
+            });
+            this.showErrorModal();
         }
     }
 
@@ -175,85 +180,46 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
                 this.setState({
                     editando:false
                 });
-                if(data.status===1){
+                if(data.data){
                     this.initUsuarios().finally(()=>{
                         this.usuarioEditado();
                         this.closeDialogEdit();
                     });
                 }else{
-                    if(data.errors.includes('username_exists')){
-                        this.usuarioExiste();
-                    }else{
-                        this.errorModificando();
-                    }
+                    this.showErrorModal(data);
                 }
             }).catch(err=>{
                 this.setState({
                     editando:false
                 });
-                this.errorModificando();
+                this.showErrorModal(err.response.data);
             });
         }catch(err){
-            this.errorModificando();
+            this.setState({
+                editando:false
+            });
+            this.showErrorModal();
         }
     }
 
     editarUsuario=(user:any)=>{
-        try{
-            this.setState({
-                nombreAdd:user.nombre,
-                usernameAdd:user.username,
-                idEdit:user.id,
-                visibleEdit:true
-            });
-        }catch(err){
-            this.errorModificando();
-        }
+        this.setState({
+            nombreAdd:user.nombre,
+            usernameAdd:user.username,
+            idEdit:user.id,
+            visibleEdit:true
+        });
     }
 
     isAddValid = ()=>{
         return this.state.nombreAdd.trim()!=='' && this.state.usernameAdd.trim()!==''
     }
 
-
-    errorCreando=()=>{
-        this.setState({creando:false});
+    showErrorModal=(data?: {errors:string[]})=>{
+        const {title,text} = this.errorService.getErrorInfo(data)
         Alert.alert(
-            "Error",
-            "Error creando usuario",
-            [
-              { text: "OK", onPress: () => {}}
-            ]
-          );
-    }
-
-    errorModificando=()=>{
-        this.setState({creando:false});
-        Alert.alert(
-            "Error",
-            "Error modificando usuario",
-            [
-              { text: "OK", onPress: () => {}}
-            ]
-          );
-    }
-
-    errorEliminando=()=>{
-        this.setState({creando:false});
-        Alert.alert(
-            "Error",
-            "Error eliminado usuario",
-            [
-              { text: "OK", onPress: () => {}}
-            ]
-          );
-    }
-
-    usuarioExiste=()=>{
-        this.setState({creando:false});
-        Alert.alert(
-            "Error",
-            "Ese nombre de usuario ya se está usando",
+            title,
+            text,
             [
               { text: "OK", onPress: () => {}}
             ]
@@ -294,7 +260,7 @@ export class UsuariosScreen extends React.Component<Props,UsuariosState>{
     }
 
     onRefresh=()=>{
-        this.setState({refreshing:true});
+        this.setState({refreshing:true, usuarios:[]});
         this.initUsuarios().finally(()=>this.setState({refreshing:false}));
     }
 

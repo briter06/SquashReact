@@ -5,6 +5,7 @@ import { globalStyles } from './styles';
 import { resolve } from 'inversify-react';
 import {AuthService} from '../services/Auth/AuthService';
 import { StackActions } from '@react-navigation/native';
+import { ErrorService } from "../services/Error/ErrorService";
 
 interface Props {
     navigation: any
@@ -14,6 +15,10 @@ export class LoginForm extends React.Component<Props>{
 
     @resolve(AuthService)
     private authService!:AuthService;
+
+    @resolve(ErrorService)
+    private errorService!:ErrorService;
+
     private back_img :any = require('../../assets/images/back.png');
     private icon_img :any = require('../../assets/images/ic_launcher_foreground.png');
 
@@ -31,18 +36,28 @@ export class LoginForm extends React.Component<Props>{
         this.setState({processing:true});
         this.authService.login(this.state.username,this.state.password)
         .then(async (result:any)=>{
-            if(result.data.status==1){
-                await this.authService.saveAccessToken(result.data.payload.accessToken);
+            if(result.data.data){
+                await this.authService.saveAccessToken(result.data.data.accessToken);
                 this.gotToMain();
             }else{
+                const {title,text} = this.errorService.getErrorInfo(result.data)
                 Alert.alert(
-                    "Error",
-                    "Usuario o contraseña incorrectos",
+                    title,
+                    text,
                     [
-                      { text: "OK", onPress: () => this.setState({processing:false})}
+                        { text: "OK", onPress: () => this.setState({processing:false})}
                     ]
-                  );
+                );
             }
+        }).catch(err=>{
+            const {title,text} = this.errorService.getErrorInfo(err.response.data)
+            Alert.alert(
+                title,
+                text,
+                [
+                    { text: "OK", onPress: () => this.setState({processing:false})}
+                ]
+            );
         });
     }
 

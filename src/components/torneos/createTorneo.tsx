@@ -11,6 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Dialog from "react-native-dialog";
 import { globalStyles, pickerStyles } from "../styles";
 import { environment } from "../../../environment";
+import { StatusCodes } from "../../enums/statusCodes.enum";
 
 interface Props {
     navigation: any
@@ -164,8 +165,8 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         try{
             this.setState({creando:true});
             this.torneoService.crearTorneo(this.state.jugadores,this.state.nivel,parseInt(this.state.rondas.trim()))
-            .then(({data}:{data:{status:number}})=>{
-                if(data.status===1){
+            .then(({data}:{data:{data?:{status:number}}})=>{
+                if(data.data?.status===StatusCodes.SUCCESS){
                     this.setState({creando:false});
                     this.props.navigation.pop();
                 }else{

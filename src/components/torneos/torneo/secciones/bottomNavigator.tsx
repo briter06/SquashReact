@@ -63,7 +63,7 @@ export default class TorneoSeccionesNavigator extends React.Component<Props,Torn
 
     componentDidMount = () => {
         this.torneoService.getMaxSeccion(this.props.id_torneo).then(({data})=>{
-            if(data.status===1){
+            if(data.data){
                 this.populateTabList(data.data.rondas);
             }
         });
