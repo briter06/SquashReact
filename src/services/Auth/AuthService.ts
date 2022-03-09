@@ -57,7 +57,6 @@ export class AuthService {
         const token = await AsyncStorage.getItem("token")||'';
         this.access_token = token;
         return axios.get(environment.API_URL+'auth/me').then((result:any)=>{
-            console.log(result.data)
             this.activeUser = result.data;
             this.user$.next(true);
         }).catch(err=>{
