@@ -96,6 +96,10 @@ export class AuthService {
         return axios.get(environment.API_URL+'auth/users');
     }
 
+    recuperarContrasenia(correo:string){
+        return axios.post(environment.API_URL+'auth/recuperarContrasenia',{correo:correo});
+    }
+
     agregarUsuario(newUser:any){
         return axios.post(environment.API_URL+'auth/signup',newUser);
     }

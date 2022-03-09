@@ -6,6 +6,7 @@ import { resolve } from 'inversify-react';
 import {AuthService} from '../services/Auth/AuthService';
 import { StackActions } from '@react-navigation/native';
 import { ErrorService } from "../services/Error/ErrorService";
+import Dialog from "react-native-dialog";
 
 interface Props {
     navigation: any
@@ -29,7 +30,9 @@ export class LoginForm extends React.Component<Props>{
     state = {
         username:'',
         password:'',
-        processing:false
+        emailRecover: '',
+        processing:false,
+        visiblePassRecover: false
     }
 
     login = ()=>{
@@ -71,6 +74,44 @@ export class LoginForm extends React.Component<Props>{
         return !this.state.processing && this.state.username.trim()!=='' && this.state.password.trim()!=='';
     }
 
+    closeDialog=()=>{
+        this.setState({visiblePassRecover:false});
+    }
+
+    recuperar = ()=>{
+        this.setState({visiblePassRecover:false,processing:true});
+        const email = this.state.emailRecover
+        this.authService.recuperarContrasenia(email).then(({data})=>{
+            if(data.data){
+                Alert.alert(
+                    'Correo envíado',
+                    'Se ha envíado una contraseña temporal a su correo electrónico',
+                    [
+                        { text: "OK", onPress: () => this.setState({processing:false})}
+                    ]
+                );
+            }else{
+                const {title,text} = this.errorService.getErrorInfo(data)
+                Alert.alert(
+                    title,
+                    text,
+                    [
+                        { text: "OK", onPress: () => this.setState({processing:false})}
+                    ]
+                );
+            }
+        }).catch(err=>{
+            const {title,text} = this.errorService.getErrorInfo(err.response.data)
+            Alert.alert(
+                title,
+                text,
+                [
+                    { text: "OK", onPress: () => this.setState({processing:false})}
+                ]
+            );
+        });
+    }
+
     render = ()=>{
         return (
             <View style={{
@@ -102,6 +143,12 @@ export class LoginForm extends React.Component<Props>{
                                 secureTextEntry={true}
                             />
 
+                            <TouchableOpacity style={[{paddingVertical:5}]} onPress={() => {this.setState({visiblePassRecover:true})}}>
+                                <Text style={{color: 'black', textDecorationLine: 'underline', marginTop: 5, textAlign:'center'}}>
+                                    Recuperar contraseña
+                                </Text>
+                            </TouchableOpacity>
+
                             <TouchableOpacity disabled={!this.valid()}
                             style={[this.valid()?globalStyles.button:globalStyles.button_disabled]} onPress={this.login}>
                                 {
@@ -113,6 +160,20 @@ export class LoginForm extends React.Component<Props>{
                         </View>
                     </View>
                 </ImageBackground>
+
+                <View>
+                    <Dialog.Container visible={this.state.visiblePassRecover}>
+                    <Dialog.Title>Recuperar contraseña</Dialog.Title>
+                    <TextInput
+                                style={styles.input_full}
+                                onChangeText={(newValue)=>{this.setState({emailRecover:newValue})}}
+                                value={this.state.emailRecover}
+                                placeholder="Correo electrónico"
+                            />
+                    <Dialog.Button onPress={this.closeDialog} label="Cancelar" />
+                    <Dialog.Button onPress={this.recuperar} label="Recuperar" />
+                    </Dialog.Container>
+                </View>
             </View>
         );
     }
@@ -127,6 +188,12 @@ const styles = StyleSheet.create({
     input: {
         borderWidth: 1,
         width:'80%',
+        textAlign:'center',
+        borderRadius:10
+    },
+    input_full: {
+        borderWidth: 1,
+        width:'100%',
         textAlign:'center',
         borderRadius:10
     },
