@@ -40,6 +40,13 @@ export const globalStyles = StyleSheet.create({
           backgroundColor:'white',
           borderWidth:2,
           borderRadius:25
+      },
+      textInput:{
+        borderWidth:0,
+        width:'95%',
+        alignSelf:'center',
+        borderBottomWidth:1,
+        borderColor: 'black'
       }
   });
 

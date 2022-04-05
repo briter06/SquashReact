@@ -1,9 +1,9 @@
 import "reflect-metadata";
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
-import { ScrollView, TextInput } from "react-native-gesture-handler";
+import { StyleSheet, Text, TouchableOpacity, View,Image, ImageBackground, SafeAreaView, RefreshControl, ActivityIndicator, Alert, Platform, TextInput } from 'react-native';
+import { ScrollView } from "react-native-gesture-handler";
 import { resolve } from "inversify-react";
-import { Table, Row, Rows } from 'react-native-table-component';
+import { Row } from 'react-native-table-component';
 import { TorneoService } from "../../services/Torneo/TorneoService";
 import RNPickerSelect from 'react-native-picker-select';
 import { AntDesign } from '@expo/vector-icons';
@@ -12,13 +12,24 @@ import Dialog from "react-native-dialog";
 import { globalStyles, pickerStyles } from "../styles";
 import { environment } from "../../../environment";
 import { StatusCodes } from "../../enums/statusCodes.enum";
+import DraggableFlatList, {
+    RenderItemParams,
+  } from "react-native-draggable-flatlist";
+import { AutocompleteInput } from "react-native-autocomplete-input";
+import { PredictiveInput } from "../common/predictiveInput";
 
 interface Props {
     navigation: any
 }
 
+interface Jugador{
+    id:string,
+    nombre:string,
+    puntaje:number
+}
+
 interface TorneoState{
-    jugadores:Array<{nombre:string,puntaje:number}>;
+    jugadores:Jugador[];
     flexRows:Array<number>;
     tableHead:Array<string>;
     niveles:Array<any>;
@@ -29,6 +40,7 @@ interface TorneoState{
     nombreAdd:string;
     puntajeAdd:string;
     creando:boolean;
+    nombres: string[];
 }
 
 
@@ -43,8 +55,8 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         super(props);
         this.state = {
             jugadores:[],
-            flexRows:[3,1,1],
-            tableHead: ['Nombre', 'Puntaje','Borrar'],
+            flexRows:[0.5,0.5,3,1,0.5],
+            tableHead: ['','#','Nombre', 'Puntaje',''],
             niveles : [
                 {label:'Avanzados',value:'Avanzados'},
                 {label:'Intermedios',value:'Intermedios'},
@@ -58,7 +70,8 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
             visibleAdd:false,
             nombreAdd:'',
             puntajeAdd:'',
-            creando:false
+            creando:false,
+            nombres:[]
         }
         
     }
@@ -69,11 +82,18 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         () => {
 
         })
+        this.initNombres()
     }
 
 
     componentWillUnmount() {
         this._unsubscribe();
+    }
+
+    initNombres(){
+        this.torneoService.getNombres().then(({data})=>{
+            this.setState({nombres:data})
+        })
     }
 
     openDialog=()=>{
@@ -95,9 +115,22 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         return {rondas,maxRondas}
     }
 
+    resetJugadoresId(jugadores:Jugador[]){
+        return jugadores.map((v,i)=>({id:(i+1).toString(),nombre:v.nombre,puntaje:v.puntaje}))
+    }
+
     agregarJugador=()=>{
         try{
-            const newJ = [...this.state.jugadores,{nombre:this.state.nombreAdd.trim(),puntaje:parseInt(this.state.puntajeAdd.trim())}];
+            let newJ = [...this.state.jugadores,{id:'',nombre:this.state.nombreAdd.trim(),puntaje:parseInt(this.state.puntajeAdd.trim())}];
+            newJ = newJ.sort((a,b)=>{
+                if(a.puntaje<b.puntaje){
+                    return 1
+                }else if(a.puntaje>b.puntaje){
+                    return -1
+                }
+                return 0
+            })
+            newJ = this.resetJugadoresId(newJ)
             const {rondas,maxRondas} = this.updateRondas(newJ);
             this.setState({
                 jugadores:newJ,
@@ -118,10 +151,9 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         }
     }
 
-    quitarJugador=(index:number)=>{
+    quitarJugador=(id:string)=>{
         try{
-            const newJ = this.state.jugadores;
-            newJ.splice(index,1);
+            const newJ = this.state.jugadores.filter(j=>j.id!==id);
             const {rondas,maxRondas} = this.updateRondas(newJ);
             this.setState({
                 jugadores:newJ,
@@ -164,7 +196,7 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
     crearTorneo = ()=>{
         try{
             this.setState({creando:true});
-            this.torneoService.crearTorneo(this.state.jugadores,this.state.nivel,parseInt(this.state.rondas.trim()))
+            this.torneoService.crearTorneo(this.state.jugadores.map(j=>({nombre:j.nombre,puntaje:j.puntaje})),this.state.nivel,parseInt(this.state.rondas.trim()))
             .then(({data}:{data:{data?:{status:number}}})=>{
                 if(data.data?.status===StatusCodes.SUCCESS){
                     this.setState({creando:false});
@@ -178,10 +210,30 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
         }
     }
 
+    renderItem = ({ item, drag, isActive }: RenderItemParams<any>) => {
+        return (
+          <Row key={item.key} data={[
+            <TouchableOpacity disabled={isActive} onPressIn={drag}>
+                <MaterialIcons name="drag-handle" size={24} color="black" />
+            </TouchableOpacity>,
+            item.id,
+            item.nombre,
+            item.puntaje,
+            <TouchableOpacity onPress={()=>this.quitarJugador(item.id)} style={{width:'100%',alignItems:'center'}}>
+            <MaterialIcons name="delete" size={24} color="black" />
+            </TouchableOpacity>
+        ]} flexArr={this.state.flexRows} style={{elevation: isActive?1:0}} textStyle={styles.table_text}/>
+        );
+      };
+    
+    filterData = ()=>{
+        return this.state.nombres.filter(n=>n.toLowerCase().includes(this.state.nombreAdd.toLocaleLowerCase())).slice(0,3).map(n=>({value:n,display:n}))
+    }
+
     render(){
         return (
             <View style={{flex:1}}>
-                <ScrollView style={{width:'100%'}} contentContainerStyle={[styles.container]}>
+                <ScrollView style={{width:'100%'}} contentContainerStyle={[styles.container]} keyboardShouldPersistTaps='always'>
 
                     <Text style={{fontWeight:'bold',fontSize:25}}>Nivel</Text>
 
@@ -218,16 +270,27 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
 
                     <View>
                         <Dialog.Container visible={this.state.visibleAdd}>
-                        <Dialog.Title>Agregar jugador</Dialog.Title>
-                        <Dialog.Input value={this.state.nombreAdd}
-                        onChangeText={(p)=>{this.setState({nombreAdd:p});}}
-                        placeholder={'Nombre del jugador'}></Dialog.Input>
-                        <Dialog.Input value={this.state.puntajeAdd}
-                        onChangeText={(p)=>{this.setState({puntajeAdd:p.split('.')[0]});}}
-                        placeholder={'Puntaje'} keyboardType={'number-pad'}></Dialog.Input>
-                        <Dialog.Button onPress={this.closeDialog} label="Cancelar" />
-                        <Dialog.Button style={!this.isAddValid()?{color:'black'}:{}}
-                        disabled={!this.isAddValid()} onPress={this.agregarJugador} label="Agregar" />
+                            <Dialog.Title>Agregar jugador</Dialog.Title>
+
+                            <View style={styles.autocompleteContainer}>
+                                <PredictiveInput
+                                    placeHolder="Nombre"
+                                    data={this.filterData()}
+                                    value={this.state.nombreAdd}
+                                    onChange={(text:string) => this.setState({ nombreAdd: text })}
+                                    onPress={(text:string)=>{
+                                        this.setState({ nombreAdd: text.toString() })
+                                    }}
+                                ></PredictiveInput>
+                            </View>
+
+                            <TextInput value={this.state.puntajeAdd}
+                            onChangeText={(p)=>{this.setState({puntajeAdd:p.split('.')[0]});}}
+                            keyboardType={'number-pad'}
+                            placeholder="Puntaje" style={[globalStyles.textInput]}></TextInput>
+                            <Dialog.Button onPress={this.closeDialog} label="Cancelar" />
+                            <Dialog.Button style={!this.isAddValid()?{color:'black'}:{}}
+                            disabled={!this.isAddValid()} onPress={this.agregarJugador} label="Agregar" />                            
                         </Dialog.Container>
                     </View>
 
@@ -238,20 +301,13 @@ export class CreateTorneoScreen extends React.Component<Props,TorneoState>{
                     
                     {
                         <View style={styles.table}>
-                            <Table borderStyle={{borderWidth: 2, borderColor: '#c8e1ff'}}>
                             <Row flexArr={this.state.flexRows} data={this.state.tableHead} style={styles.table_head} textStyle={styles.table_text}/>
-                            {
-                                this.state.jugadores.map((t,i)=>
-                                    <Row key={i} data={[
-                                        t.nombre,
-                                        t.puntaje,
-                                        <TouchableOpacity onPress={()=>this.quitarJugador(i)} style={{width:'100%',alignItems:'center'}}>
-                                            <MaterialIcons name="delete" size={24} color="black" />
-                                        </TouchableOpacity>
-                                    ]} flexArr={this.state.flexRows} textStyle={styles.table_text}/>
-                                )
-                            }
-                            </Table>
+                            <DraggableFlatList
+                                data={this.state.jugadores}
+                                onDragEnd={({ data }) => this.setState({jugadores:this.resetJugadoresId(data)})}
+                                keyExtractor={(item) => item.id}
+                                renderItem={this.renderItem}
+                                />
                         </View>
                     }
                     <TouchableOpacity disabled={!this.valid()}
@@ -303,6 +359,24 @@ const styles = StyleSheet.create({
     },
     table_text:{
         margin:6
-    }
+    },
+
+      itemText: {
+        fontSize: 15,
+        margin: 2,
+      },
+      descriptionContainer: {
+        // `backgroundColor` needs to be set otherwise the
+        // autocomplete input will disappear on text input.
+        backgroundColor: '#F5FCFF',
+        marginTop: 8,
+      },
+      infoText: {
+        textAlign: 'center',
+      },
+      autocompleteContainer: {
+          height:80,
+          zIndex:50
+      },
   });
 

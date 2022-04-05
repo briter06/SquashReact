@@ -129,8 +129,9 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                             </View>
                         )
                     }
-                    {
-                        this.state.allowed?
+                </ScrollView>
+                {
+                    this.state.allowed?
                         <FloatingAction
                             actions={actions}
                             onPressItem={name => {
@@ -138,9 +139,9 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
                                     this.props.navigation.navigate('crearTorneo');
                                 }
                             }}
-                        />:<View></View>
-                    }
-                </ScrollView>
+                        />
+                    :<View></View>
+                }
             </View>
         );
     }
@@ -150,7 +151,8 @@ export class TorneosScreen extends React.Component<Props,TorneosState>{
 const styles = StyleSheet.create({
     container:{
         alignItems: 'center',
-        minHeight:'100%'
+        minHeight:'100%',
+        paddingBottom:20
     },
     floating_button:{
         position:'absolute',

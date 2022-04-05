@@ -18,6 +18,10 @@ export class TorneoService {
         return axios.get(environment.API_URL+'torneos/'+id+'/jugadores');
     }
 
+    getNombres(){
+        return axios.get(environment.API_URL+'torneos/nombres');
+    }
+
     getPartidos(id:number,seccion:number){
         return axios.get(environment.API_URL+'torneos/'+id+'/partidos/seccion/'+seccion);
     }
@@ -27,6 +31,13 @@ export class TorneoService {
             nivel:nivel,
             rondas:rondas,
             jugadores:jugadores
+        });
+    }
+
+    editarJugador(torneoId:number,jugadorId:number,nombre:string){
+        return axios.put(environment.API_URL+'torneos/'+torneoId+'/jugadores',{
+            id: jugadorId,
+            nombre:nombre
         });
     }
 
